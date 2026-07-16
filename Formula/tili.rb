@@ -8,17 +8,17 @@
 class Tili < Formula
   desc "i3-like tiling window manager for macOS"
   homepage "https://github.com/itsdezen/tili"
-  version "0.1.4"
+  version "0.1.5"
   license "MIT"
 
   on_arm do
     url "https://github.com/itsdezen/tili/releases/download/v#{version}/tili-#{version}-aarch64-apple-darwin.tar.gz"
-    sha256 "b1af89ed4fde2c77718d548a32dc1efefe408a1a70edd476dde374e16415de83"
+    sha256 "e7f3163c619ced218176b6c5b407970aaeae6f09068af4336bccc4528da87f34"
   end
 
   on_intel do
     url "https://github.com/itsdezen/tili/releases/download/v#{version}/tili-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "8448ea4a3fb6bca476b1d28fb23547fdfcabb88876d371611a8607264d217197"
+    sha256 "5d4729b55d90ad95db25e953e19c6bdd67c1c6f2ba499a729aae9c1fcd7061f5"
   end
 
   def install
@@ -44,11 +44,30 @@ class Tili < Formula
     # instead of continuing to run the old ones until the user remembers
     # to `tili stop && tili start` by hand. A fresh install has no plist
     # yet, so this is a no-op then.
-    daemon_plist = "#{Dir.home}/Library/LaunchAgents/com.tili.daemon.plist"
+    #
+    # post_install runs inside Homebrew's install sandbox, which fakes
+    # `$HOME`/`Dir.home` to a throwaway temp dir and denies filesystem
+    # writes outside the Cellar/temp/log dirs (confirmed on real hardware:
+    # a plain `Dir.home` here resolves to a `/private/tmp/...` sandbox
+    # scratch dir, and writing to the real `~/Library/LaunchAgents` fails
+    # with EPERM even once that's corrected) — so `tili stop`/`tili start`,
+    # which need to rewrite/reload the LaunchAgent plist, can't run from
+    # here. `Dir.home(ENV.fetch("USER"))` (the same trick Homebrew's own
+    # sandbox.rb uses) resolves the *real* home via the user database
+    # instead of the faked `$HOME` env var, which is enough for the
+    # read-only existence check below. For the actual restart, just kill
+    # the running processes instead of touching any LaunchAgent file:
+    # `KeepAlive` in the already-loaded plist makes launchd relaunch them
+    # immediately, through the same `bin/tili-daemon`/`bin/tili-menubar`
+    # symlinks Homebrew has already relinked to this version by the time
+    # post_install runs — sending a signal isn't a sandboxed filesystem
+    # operation, so this works where a plist rewrite doesn't.
+    real_home = Dir.home(ENV.fetch("USER"))
+    daemon_plist = "#{real_home}/Library/LaunchAgents/com.tili.daemon.plist"
     return unless File.exist?(daemon_plist)
 
-    system bin/"tili", "stop"
-    system bin/"tili", "start"
+    system "pkill", "-x", "tili-daemon"
+    system "pkill", "-x", "tili-menubar"
   end
 
   def caveats
