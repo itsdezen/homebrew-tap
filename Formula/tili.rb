@@ -8,17 +8,17 @@
 class Tili < Formula
   desc "i3-like tiling window manager for macOS"
   homepage "https://github.com/itsdezen/tili"
-  version "0.4.1"
+  version "0.4.2"
   license "MIT"
 
   on_arm do
     url "https://github.com/itsdezen/tili/releases/download/v#{version}/tili-#{version}-aarch64-apple-darwin.tar.gz"
-    sha256 "65a39f9a8204a2cc75a395ec3a9577c19e9c32885fc3b1d6ca66fed1d3ac6afa"
+    sha256 "f7df2236f9d306d3188f23743f1650be6cf1c2df8d4bb43f3cf2d9a20913fbaa"
   end
 
   on_intel do
     url "https://github.com/itsdezen/tili/releases/download/v#{version}/tili-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "f496d53bec6d22177e7bbdd30854e9ae5bb2799a2403ba32ebe71eeed4fb84e7"
+    sha256 "f0c09a191c7ba5b3d9288be4970a6d8af7a34ca23b44d68471a45fdf1b88f616"
   end
 
   def install
@@ -62,12 +62,18 @@ class Tili < Formula
     # symlinks Homebrew has already relinked to this version by the time
     # post_install runs — sending a signal isn't a sandboxed filesystem
     # operation, so this works where a plist rewrite doesn't.
+    #
+    # `quiet_system`, not `system`: pkill exits 1 when no process matches
+    # (e.g. the plist exists but the daemon/menubar isn't currently
+    # running), which `system` treats as a build failure and surfaces as a
+    # "post-install step did not complete successfully" warning even
+    # though there's nothing actually wrong.
     real_home = Dir.home(ENV.fetch("USER"))
     daemon_plist = "#{real_home}/Library/LaunchAgents/com.tili.daemon.plist"
     return unless File.exist?(daemon_plist)
 
-    system "pkill", "-x", "tili-daemon"
-    system "pkill", "-x", "tili-menubar"
+    quiet_system "pkill", "-x", "tili-daemon"
+    quiet_system "pkill", "-x", "tili-menubar"
   end
 
   def caveats
