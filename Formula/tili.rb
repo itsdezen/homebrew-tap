@@ -13,12 +13,12 @@ class Tili < Formula
 
   on_arm do
     url "https://github.com/itsdezen/tili/releases/download/v#{version}/tili-#{version}-aarch64-apple-darwin.tar.gz"
-    sha256 "072a4758131575e6652d81ae0e1983ece82ac54b75c48e2a101077a8071b42d1"
+    sha256 "1fb718b84e2b70abd0ffeec1807bdfa4646b7c48917a097e6aeb03dc5997e4f8"
   end
 
   on_intel do
     url "https://github.com/itsdezen/tili/releases/download/v#{version}/tili-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "b247107bbed86294eb43b65f94bcf3f79acb922e0c1f1daaa1f9a308a3b14123"
+    sha256 "7e7c8b5c0091367b409f19c80ed5acbbf863ba2780a7995d7591323750a34a6c"
   end
 
   def install
